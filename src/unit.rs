@@ -162,6 +162,8 @@ pub(crate) fn connect(
 
     let send_result = send_prelude(&unit, &mut stream, redir);
 
+    info!("sent prelude {:?}", send_result);
+
     if let Err(err) = send_result {
         if is_recycled {
             debug!("retrying request early {} {}", method, url);
@@ -175,8 +177,14 @@ pub(crate) fn connect(
     }
     let retryable = req.is_retryable(&body);
 
+    info!("sending body");
+
     // send the body (which can be empty now depending on redirects)
-    body::send_body(body, unit.is_chunked, &mut stream)?;
+    let body_result = body::send_body(body, unit.is_chunked, &mut stream);
+
+    info!("sent body {:?}", body_result);
+
+    body_result?;
 
     // start reading the response to process cookies and redirects.
     let mut stream = stream::DeadlineStream::new(stream, unit.deadline);
